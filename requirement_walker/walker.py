@@ -7,11 +7,7 @@ import re
 import logging
 from pathlib import Path
 from typing import Union, List, Generator
-from pkg_resources import Requirement # , RequirementParseError
-# try:
-#     from pkg_resources.extern.requirements import InvalidRequirement # Python3.8
-# except ImportError:
-#     InvalidRequirement = RequirementParseError
+from pkg_resources import Requirement
 
 # 3rd Party
 
