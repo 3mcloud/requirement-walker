@@ -27,7 +27,7 @@ jobs:
           python -m pylint requirement_walker
       - name: pytest
         run: |
-          python -m pytest --cov-report term-missing --cov=requirement_walker --cov-fail-under=20
+          python -m pytest --cov-report term-missing --cov=requirement_walker --cov-fail-under=80
       # - name: Build and publish
       #   env:
       #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
