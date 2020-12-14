@@ -165,7 +165,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
                 if REQ_OPTION_PATTERN.search(self.requirement_str):
                     #  Line had -r or --requirement flags
                     raise RequirementFileError(
-                        "This requirement is a requirement file, parse serperately.") from err
+                        "This requirement is a requirement file, parse serperately.") from None
                 if 'local-package-name' in self.arguments:
                     # Else lets see if local-package-name argument was added
                     self.requirement = LocalRequirement(
