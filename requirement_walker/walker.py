@@ -7,11 +7,11 @@ import re
 import logging
 from pathlib import Path
 from typing import Union, List, Generator
-from pkg_resources import Requirement, RequirementParseError
-try:
-    from pkg_resources.extern.requirements import InvalidRequirement # Python3.8
-except ImportError:
-    InvalidRequirement = RequirementParseError
+from pkg_resources import Requirement # , RequirementParseError
+# try:
+#     from pkg_resources.extern.requirements import InvalidRequirement # Python3.8
+# except ImportError:
+#     InvalidRequirement = RequirementParseError
 
 # 3rd Party
 
@@ -160,7 +160,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         if self.requirement_str:
             try:
                 self.requirement = Requirement.parse(self.requirement_str)
-            except (RequirementParseError, InvalidRequirement, AttributeError) as err:
+            except Exception as err: # pylint: disable=broad-except
                 LOGGER.warning(
                     "Was unable to use pkg_resources to parse requirement. "
                     "Attempting too parse using custom code. RequirementParseError for reference:"
