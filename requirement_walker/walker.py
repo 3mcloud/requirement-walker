@@ -5,7 +5,6 @@ Class to parse requirements file.
 # Built In
 import re
 import logging
-from os.path import join
 from pathlib import Path
 from typing import Union, List, Generator
 from pkg_resources import Requirement, RequirementParseError
@@ -111,7 +110,7 @@ class Comment:
                 extracted_args[name] = val[0] if val else None
         return extracted_args
 
-class LocalRequirement(Requirement):
+class LocalRequirement(Requirement): # pylint: disable=too-few-public-methods
     """
     Class to handle local requirements. Requirement name is optional
     but should probably be added.
@@ -122,7 +121,7 @@ class LocalRequirement(Requirement):
         super().__init__(req_name)
         self.url = local_path
 
-class FailedRequirement(Requirement):
+class FailedRequirement(Requirement): # pylint: disable=too-few-public-methods
     """
     Class to handle failed requirements. Requirement name is optional
     but defaulted.
@@ -166,7 +165,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
                 if REQ_OPTION_PATTERN.search(self.requirement_str):
                     #  Line had -r or --requirement flags
                     raise RequirementFileError(
-                        "This requirement is a requirement file, parse serperately.")
+                        "This requirement is a requirement file, parse serperately.") from err
                 if 'local-package-name' in self.arguments:
                     # Else lets see if local-package-name argument was added
                     self.requirement = LocalRequirement(
