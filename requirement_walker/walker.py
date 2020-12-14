@@ -234,7 +234,7 @@ def walk(file_path: str) -> Generator[Entry, None, None]:
     """
     full_path = Path(file_path)
     LOGGER.info("Walking requirements for file: %s", full_path.absolute())
-    for line in read_file_lines(full_path):
+    for line in read_file_lines(full_path.absolute()):
         # Strip off the newlines to make things easier
         line = line.strip()
         if not line:

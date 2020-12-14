@@ -5,17 +5,17 @@ from requirement_walker import walk, LocalRequirement, FailedRequirement
 
 # Owned
 
-def test_simple_assertions():
+def test_simple_assertions(examples_path):
     """ Use the walker and make some simple assertions. """
-    entries = list(walk('./examples/example_application/project_requirements.txt'))
+    entries = list(walk(examples_path / './example_application/project_requirements.txt'))
     assert len(entries) == 16
     assert not any(isinstance(entry.requirement, FailedRequirement) for entry in entries)
     local_reqs = [entry.requirement for entry in entries if isinstance(entry.requirement, LocalRequirement)]
     assert len(local_reqs) == 3
 
-def test_simple_req_file():
+def test_simple_req_file(examples_path):
     """ Test the sole requirements.txt file """
-    entries = list(walk('./examples/requirements.txt'))
+    entries = list(walk(examples_path / './requirements.txt'))
     assert len(entries) == 11
     failed_reqs = [entry.requirement for entry in entries if isinstance(entry.requirement, FailedRequirement)]
     local_reqs = [entry.requirement for entry in entries if isinstance(entry.requirement, LocalRequirement)]
