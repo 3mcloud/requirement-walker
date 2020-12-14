@@ -1,0 +1,2 @@
+foo==1.1.2 # test
+-r ./other_reqs.txt

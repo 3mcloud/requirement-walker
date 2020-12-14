@@ -1,0 +1,2 @@
+-r ./../generic_reqs.txt
+./../../pip_packages/orm_models # requirement-walker: local-package-name|root-relative=./pip_packages/orm_models

@@ -1,0 +1,11 @@
+astroid==2.4.2
+attrs==20.3.0
+aws-xray-sdk==2.6.0
+boto==2.49.0
+./local_pips/my_package # This will cause a failed requirement step
+boto3==1.16.2
+botocore==1.19.28
+certifi==2020.11.8
+cffi==1.14.4
+./pip_packages/orm_models # requirement-walker: local-package-name
+orm @ git+ssh://git@github.mmm.com/MMM/firecracker-infra.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link

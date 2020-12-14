@@ -1,0 +1,2 @@
+foo2==1.1.1 # Another reference
+-r ./../upper_nested/upper_reqs.txt

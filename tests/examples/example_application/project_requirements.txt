@@ -1,0 +1,4 @@
+# One-lining just to show multiple -r works on one line, -r is the only thing that works on one line.
+-r ./lambdas/s3_event_lambda/s3_lambda_reqs.txt --requirement=./lambdas/api_lambda/api_lambda_reqs.txt
+
+./pip_packages/orm_models # requirement-walker: local-package-name=orm-models
