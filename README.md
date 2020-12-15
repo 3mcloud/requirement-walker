@@ -188,7 +188,7 @@ if __name__ == '__main__':
     print(*entries, sep='\n')
 ```
 
-### Output
+### Code Output
 
 ```text
 ... logs omitted ...
