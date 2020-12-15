@@ -1,0 +1,67 @@
+# objects:
+# https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions
+# syntax:
+# https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
+name: PyPi Deploy
+on: 
+  workflow_dispatch: # https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/
+    inputs:
+      version:
+        description: 'Version to use for the pip package.' #  "${{ github.event.inputs.version }}""
+        required: true
+
+# TODO: it is possible to automatically create release branches: https://riggaroo.dev/using-github-actions-to-automate-our-release-process/
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v2
+  
+      - name: Set up Python
+        id: setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+    
+      - name: Install Dependencies
+        id: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+  
+      - name: pylint
+        id: pylint
+        run: |
+          python -m pylint requirement_walker
+  
+      - name: pytest
+        id: pytest
+        run: |
+          python -m pytest --cov-report term-missing --cov=requirement_walker --cov-fail-under=80
+  
+  deploy:
+    needs: [testing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+      - name: Build and publish
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
+  
