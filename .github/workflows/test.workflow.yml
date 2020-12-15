@@ -1,9 +1,6 @@
 name: Test Package
 on:
   push: # https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows
-  release:
-    types: # This configuration does not affect the page_build event above
-      - created
 jobs:
   testing:
     runs-on: ubuntu-latest
