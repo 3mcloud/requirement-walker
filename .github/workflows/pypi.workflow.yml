@@ -1,7 +1,5 @@
 name: Deploy to PyPi
 on:
-  release:
-    types: [created]
   workflow_run:
     workflows:
       - Test Package
