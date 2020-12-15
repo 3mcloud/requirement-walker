@@ -49,7 +49,7 @@ def ssh_check_or_https(input_file_path: str, output_file_path: str) -> None:
     ARGS:
         input_file_path (str): Path to the inputted requirements.txt file.
         output_file_path (str): Path to output all the requirements to.
-    All requirements will be output 
+    All requirements will be outputted
     """
 
     entries = []
