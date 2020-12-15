@@ -2,7 +2,7 @@
 # https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions
 # syntax:
 # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
-name: PyPi Test & Deploy Workflow
+name: CI Testing
 on:
   push:
 jobs:
