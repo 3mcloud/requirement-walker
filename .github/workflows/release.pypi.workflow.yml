@@ -2,7 +2,7 @@ name: Deploy to PyPi
 on:
   workflow_run:
     workflows:
-      - Test Package
+      - Test Release
     types: completed
 jobs:
   deploy:
