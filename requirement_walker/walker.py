@@ -127,7 +127,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         if self.requirement_str:
             try:
                 self.requirement = Requirement.parse(self.requirement_str)
-            except Exception as err: # pylint: disable=braod-except
+            except Exception as err: # pylint: disable=broad-except
                 LOGGER.info(
                     "Was unable to use pkg_resources to parse requirement. "
                     "Attempting too parse using custom code. Exception for reference:"
