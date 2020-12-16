@@ -1,42 +1,25 @@
 """
-Class to parse requirements file.
-1 Requirement should be on 1 line.
+Package to parse requirements file.
 """
+
 # Built In
-import re
 import logging
 from pathlib import Path
-from typing import Union, List, Generator
+from typing import Union, Generator, Tuple
 from pkg_resources import Requirement
 
 # 3rd Party
 
 # Owned
+from .requirment_types import LocalPackageRequirement, FailedRequirement
+from .regex_expressions import (
+    LINE_COMMENT_PATTERN, # Serpate a requirement from its comments.
+    REQ_OPTION_PATTERN, # Extract -r and --requirement from a requirement.
+    ARG_EXTRACT_PATTERN, # Extract package arguments from the requirement comments.
+    GIT_PROTOCOL # Extra git protocal from git requirements.
+)
 
 LOGGER = logging.getLogger(__name__)
-
-# Used to seperate the important part from the comments on each line.
-LINE_COMMENT_PATTERN = re.compile(r"^(?P<reqs>[^#\r\n]*?)(?:\s*)(?P<comment>#.*)?$")
-
-# Used to pull out -r or --requirement files
-# Works for multi `-r`s in a single line
-# WORKS: -r test.txt -r ./path/test2.txt --requirement=oops.txt --requirement  C:\oops.txt
-# INVALID: -r=333 # this should not match
-REQ_OPTION_PATTERN = re.compile(r"(?:^|\s)(?P<option>(?:-r\s+)|((?:--requirement)(?:\s+|\=)))(?P<file_path>(?:.*?)(?=[\s]+|$))") # pylint: disable=line-too-long
-
-# Pull out argument from comments for `requirement-walker`
-# Example line in req file:
-# my-req==1.1.1 # requirement-parse: local-package-name=my_package
-ARG_EXTRACT_PATTERN = re.compile(r"(?:requirement-walker:\s*)(?P<args>.*)(?:\s|$)")
-
-
-def read_file_lines(file_path: str):
-    """
-    Generator: opens the file and returns its line iterator.
-    """
-    with open(file_path, 'r') as file_obj:
-        for line in file_obj:
-            yield line
 
 class RequirementFileError(Exception):
     """
@@ -57,21 +40,30 @@ class Comment:
         """
         self._comment_str = comment_str
          # Stripping for good measure
-        self.comment = comment_str.strip() if comment_str is not None else None
+        self.comment = comment_str.strip() if isinstance(comment_str, str) else None
         self.arguments = self._extract_arguments() if self.comment else {}
         LOGGER.debug("Arguments pulled from comment: %s", self.arguments)
 
     def __bool__(self):
-        """ A Comment is true if it is not `None` """
+        """
+        A Comment is true if it is not `None` (an empty string comment would still return True)
+        """
         return self.comment is not None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """ TODO """
-        return f"Comment(comment='{self.comment}')"
+        if self:
+            return f"Comment(comment='{self.comment}')"
+        return "Comment(comment=None)"
 
-    def __str__(self):
-        """ Return string representation of comment"""
-        return self.comment
+    def __str__(self) -> str:
+        """
+        Return string representation of comment (i.e. what was before) including the #.
+        If there was no comment, then this will just return an empty string
+        """
+        if self:
+            return self.comment
+        return ''
 
     def _extract_arguments(self) -> None:
         """
@@ -110,27 +102,6 @@ class Comment:
                 extracted_args[name] = val[0] if val else None
         return extracted_args
 
-class LocalRequirement(Requirement): # pylint: disable=too-few-public-methods
-    """
-    Class to handle local requirements. Requirement name is optional
-    but should probably be added.
-    """
-    def __init__(self, local_path, req_name: Union[str, None] = None):
-        if req_name is None:
-            req_name = 'local_req'
-        super().__init__(req_name)
-        self.url = local_path
-
-class FailedRequirement(Requirement): # pylint: disable=too-few-public-methods
-    """
-    Class to handle failed requirements. Requirement name is optional
-    but defaulted.
-    """
-    def __init__(self, full_req, req_name: Union[str, None] = None):
-        if req_name is None:
-            req_name = 'failed_req'
-        super().__init__(req_name)
-        self.url = full_req
 
 class _ProxyRequirement: # pylint: disable=too-few-public-methods
     """
@@ -149,7 +120,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         """
         self._requirement_str = requirement_str
         # Stripping for good measure
-        self.requirement_str = requirement_str.strip() if requirement_str else None
+        self.requirement_str = requirement_str.strip() if isinstance(requirement_str, str) else None
         self.arguments = arguments
         LOGGER.debug("Arguments for requirements. Requirements %s - Arguments %s",
                      self.requirement_str, self.arguments)
@@ -157,9 +128,9 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
             try:
                 self.requirement = Requirement.parse(self.requirement_str)
             except Exception as err: # pylint: disable=broad-except
-                LOGGER.warning(
+                LOGGER.info(
                     "Was unable to use pkg_resources to parse requirement. "
-                    "Attempting too parse using custom code. RequirementParseError for reference:"
+                    "Attempting too parse using custom code. Exception for reference:"
                     " %s", err
                 )
                 if REQ_OPTION_PATTERN.search(self.requirement_str):
@@ -168,11 +139,12 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
                         "This requirement is a requirement file, parse serperately.") from None
                 if 'local-package-name' in self.arguments:
                     # Else lets see if local-package-name argument was added
-                    self.requirement = LocalRequirement(
+                    self.requirement = LocalPackageRequirement(
                         self.arguments.get('root-relative', self.requirement_str),
                         self.arguments.get('local-package-name')
                     )
                 else:
+                    # Couldn't parse it with our current logic.
                     LOGGER.warning(
                         "Unable to parse requirement. Doing simple "
                         "FailedRequirement where name=%s and url=%s. Open Issue in "
@@ -197,85 +169,190 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         """
         if isinstance(self.requirement, FailedRequirement):
             return self.requirement.url
-        if isinstance(self.requirement, LocalRequirement):
+        if isinstance(self.requirement, LocalPackageRequirement):
             return self.requirement.url
-        return self.requirement.url if self.requirement.url else str(self.requirement)
+        return str(self.requirement) # Fall back to the string representation of a Requirement
 
 class Entry: # pylint: disable=too-few-public-methods
     """
-    We define an `Entry` as a line within the requirement file which is either a
-    requirement and/or comment. An entry can be a:
+    We define an `Entry` as a line within the requirement file.
+    An entry can be a:
         - requirement + a comment
         - requirement only
         - comment only
+        - empty line
+        - requirement file (multiple can be in one line but it will be flattened)
+        - requirement file + a comment
+    Ideally, if you iterate over each entry and add each one to a file you will
+    end with all your requirements in a single file with the same formatting they were pulled as.
     """
     def __init__(self,
-                 requirement: _ProxyRequirement,
-                 comment: Comment):
-        self.proxy_requirement = requirement
-        self.requirement = requirement.requirement if requirement else None
-        self.comment = comment
+                 *_, # Not going to allow positional arguments.
+                 proxy_requirement: Union['_ProxyRequirement', None] = None,
+                 comment: ['Comment', None] = None,
+                 requirement_file: Union['RequirementFile', None] = None):
+        self.proxy_requirement = proxy_requirement if proxy_requirement else None
+        self.requirement = proxy_requirement.requirement if proxy_requirement else None
+        self.comment = comment if comment else None
+        self.requirement_file = requirement_file
 
     def __str__(self):
         """ String magic method overload to print out an entry as it appeared before. """
-        if not self.comment:
-            return str(self.proxy_requirement)
-        if not self.proxy_requirement:
-            return str(self.comment)
-        return str(self.proxy_requirement) + ' ' + str(self.comment)
-
-
-def walk(file_path: str) -> Generator[Entry, None, None]:
-    """
-    Walks a requirement file path and yields a GENERATOR of Entry objects.
-    ARGS:
-        file_path (str): looks something like `./myfiles/requirements.txt`
-    TODO: How to handle duplicates?
-    """
-    full_path = Path(file_path)
-    LOGGER.info("Walking requirements for file: %s", full_path.absolute())
-    for line in read_file_lines(full_path.absolute()):
-        # Strip off the newlines to make things easier
-        line = line.strip()
-        if not line:
-            continue # Empty lines will be skipped entirely.
-        # Pull out the requirement (seperated from any comments)
-        match = LINE_COMMENT_PATTERN.match(line)
-        if not match:
-            LOGGER.error(
-                "Could not properly match the following line (continuing): %s",
-                line
-            )
-            continue
-
-        req_str, comment = match.group('reqs'), match.group('comment')
-        comment = Comment(comment)
+        root_relative = self.comment.arguments.get('root-relative', None) if self.comment else None
+        # pylint: disable=line-too-long
+        str_map = {
+            # proxy_requirement, comment, requirement_file
+            (False, False, False): '', # Was just an empty line
+            (True, False, False): f"{self.proxy_requirement}",
+            (False, True, False):  f"{self.comment}",
+            (False, False, True): f"-r {root_relative}" if root_relative else f"-r {self.requirement_file}",
+            (True, True, False): f"{self.proxy_requirement} {self.comment}",
+            (False, True, True): f"-r {root_relative} {self.comment}" if root_relative else f"-r {self.requirement_file} {self.comment}",
+        }
+        # pylint: enable=line-too-long
+        key = (bool(self.proxy_requirement), bool(self.comment), bool(self.requirement_file))
         try:
-            requirement = _ProxyRequirement(req_str, comment.arguments)
-            yield Entry(requirement, comment)
-        except RequirementFileError:
-            LOGGER.debug("Parsed requirement appears to be -r argument, recursing...")
-            for result in REQ_OPTION_PATTERN.finditer(req_str):
-                new_path = result.group('file_path')
-                full_relative_path = full_path.parent.absolute() / new_path
-                LOGGER.debug(
-                    "Recursively calling requirement walker. line: %s - new_path: %s",
-                    new_path, full_relative_path
-                )
-                yield from walk(full_relative_path)
+            return str_map[key]
+        except KeyError:
+            LOGGER.exception(
+                "Exception occured. Unknown pattern of arguments passed to Entry object.Continueing"
+            )
+            return ''
 
+    def __bool__(self):
+        """
+        A Entry is considered False if it was just an empty line or a line with nothing
+        but spaces.
+        """
+        for attr in (self.proxy_requirement, self.comment, self.requirement_file):
+            if attr is not None:
+                return True
+        return False
 
-def entries_to_file(entries: List[Entry], file_path: str) -> None:
-    """ Saves a list of entries to a requirements.txt file. """
-    print(entries, file_path)
-    raise NotImplementedError
+    def is_git(self, return_protocol: bool = False) -> Union[bool, Tuple[bool, str]]:
+        """
+        Returns true if the requirement for this entry is a requirement to a git URL.
+        ARGS:
+            return_protocol (bool): If set to True instead of just return a bool, this method
+                will also return the protocol used for git: ['http', 'https', 'ssh', '']
+        """
+        if self.requirement and self.requirement.url:
+            result = GIT_PROTOCOL.search(self.requirement.url)
+            if result:
+                return True, result.group('protocol') if return_protocol else True
+        return False, '' if return_protocol else False
 
+    def is_comment_only(self):
+        """ Returns true if this entry was a comment and nothing else. """
+        for attr in (self.proxy_requirement, self.requirement_file):
+            if attr is not None:
+                return False
+        if self.comment is None:
+            return False
+        return True
 
-if __name__ == "__main__":
-    FORMAT = '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
-    logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-    ENTRIES = walk('./example_reqs.txt')
-    # for e in entries:
-    #     print(str(e.requirement))
-    #     break
-    print(*ENTRIES, sep='\n')
+class RequirementFile:
+    """ A class which represents a requirement file. """
+    def __init__(self, requirement_file_path: str):
+        """
+        Constructor.
+        ARGS:
+            requirement_file_path (str): Path, absolute or relative, to a `requirements.txt` file.
+        """
+        self.sub_req_files = {}
+        self.requirement_file_path = Path(requirement_file_path)
+        self.entries = list(self)
+
+    def to_single_file(self,
+                       path: str,
+                       np_duplicate_lines: bool = False,
+                       no_empty_lines: bool = False,
+                       no_comment_only_lines: bool = False) -> None:
+        """
+        Output all requirements to the provided path. Creates/overwrites the provided file path.
+        Good for removing `-r` or `--requirement` flags.
+        ARGS:
+            path (str): Path to the file which will be written to.
+            np_duplicate_lines (bool): Skips duplicate lines
+                                       (Entire line must be a duplicate with another).
+            no_empty_lines (bool): Don't add lines that were empty or just had spaces.
+            no_comment_only_lines (bool): Don't add lines which were only comments with
+                                          no requirements.
+        """
+        file_path = Path(path)
+        file_path.parent.mkdir(parents=True, exist_ok=True) # Make the directory if it doesn't exist
+        entries_to_write = []
+        for entry in self.iter_recursive():
+            if no_empty_lines and not entry:
+                continue
+            if no_comment_only_lines and entry.is_comment_only():
+                continue
+            entries_to_write.append(entry)
+        if np_duplicate_lines:
+            entries_to_write = {val: None for val in entries_to_write} # Set doesn't retain order.
+        with open(file_path.absolute(), 'w') as output_file:
+            print(*entries_to_write, sep='\n', file=output_file)
+
+    def __iter__(self) -> Generator[Entry, None, None]:
+        """
+        Walks a requirement file path and yields a GENERATOR of Entry objects.
+        """
+        LOGGER.info("Iterating requirements file: %s", self.requirement_file_path.absolute())
+        with open(self.requirement_file_path.absolute()) as input_file:
+            for line in input_file:
+                # Strip off the newlines to make things easier
+                line = line.strip()
+                if not line:
+                    yield Entry() # Empty Line
+                    continue
+
+                # Pull out the requirement (seperated from any comments)
+                match = LINE_COMMENT_PATTERN.match(line)
+                if not match:
+                    LOGGER.error(
+                        "Could not properly match the following line (continuing): %s",
+                        line
+                    )
+                    continue
+
+                req_str, comment = match.group('reqs'), match.group('comment')
+                comment = Comment(comment)
+                try:
+                    requirement = _ProxyRequirement(req_str, comment.arguments)
+                    yield Entry(proxy_requirement=requirement, comment=comment)
+                except RequirementFileError:
+                    LOGGER.debug(
+                        "Parsed requirement appears to be -r argument, make entry a req file.")
+                    for result in REQ_OPTION_PATTERN.finditer(req_str):
+                        new_path = result.group('file_path')
+                        full_relative_path = self.requirement_file_path.parent.absolute() / new_path
+                        LOGGER.debug(
+                            "Parent File: %s - Child requirement file "
+                            "path: %s - New Child Path: %s",
+                            self.requirement_file_path.parent.absolute(),
+                            new_path,
+                            full_relative_path
+                        )
+                        yield Entry(
+                            requirement_file=RequirementFile(full_relative_path),
+                            comment=comment
+                        )
+
+    def __repr__(self):
+        """ Object Representation """
+        return f"RequirementFile(requirement_file_path='{self.requirement_file_path.absolute()}')"
+
+    def __str__(self):
+        """ String Overload, returns the absolute path to the req file. """
+        return str(self.requirement_file_path.absolute())
+
+    def iter_recursive(self) -> Generator[Entry, None, None]:
+        """
+        Iterates through requirements. If another requirement file is hit, it will yield
+        from that generator.
+        """
+        for entry in self:
+            if isinstance(entry.requirement_file, RequirementFile):
+                yield from entry.requirement_file.iter_recursive()
+            else:
+                yield entry

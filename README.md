@@ -23,7 +23,7 @@ Available arguments:
 | Name | Expect # of Values | Discription |
 | - | -| -|
 | local-package-name | 0 or 1 | If a requirement is a path to a local pip package, then provide this argument to tell the walker that its local. You can optionally tell provide the name of the pip package which can be used when filtering requirements. (See [Example Workflow](#example-workflow)) |
-| root-relative | 1 | Can be provided along with `local-package-name` or can be stand alone with any `-r` requirements. When the walker sees a relative path for a requirement, it will use this provided value instead of the value actually in that line of the `requirements.txt` file. |
+| root-relative | 1 | Can be provided along with `local-package-name` or can be stand alone with any `-r` requirements. When the walker sees a relative path for a requirement, it will use this provided value instead of the value actually in that line of the `requirements.txt` file when saving to a file. |
 
 ## Example Workflow
 
@@ -71,6 +71,8 @@ example_application
 
 Assuming `requirement-walker` is already installed in a virtual environment or locally such that it can be imported.
 
+These files can also be found in `./test/examples/example_application`.
+
 ```python
 """ Example Script """
 # Assuming I am running this script in the directory it is within above.
@@ -79,7 +81,7 @@ Assuming `requirement-walker` is already installed in a virtual environment or l
 import logging
 
 # 3rd Party
-from requirement_walker import walk
+from requirement_walker import RequirementFile
 
 # Owned
 
@@ -87,17 +89,27 @@ from requirement_walker import walk
 if __name__ == '__main__':
     FORMAT = '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
     logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-    entries = list(walk('./example_application/project_requirements.txt'))
-    print(*entries, sep='\n') # Output found down below
+    req_file = RequirementFile('./example_application/project_requirements.txt')
+    # RequirementFile has a magic method __iter__ written for it so it can be iterated over.
+    # Outputs found down below
+    print("Output 1:", *req_file, sep='\n') # This will print the file basically as is
+    print("---------------------------------------------")
+    print("Output 2:", *req_file.iter_recursive(), sep='\n') # This will print all reqs in without -r
+    # You can also send the reqs to a single file via:
+    # req_file.to_single_file(path_to_output_to)
+    # That method accepts, no_empty_lines and no_comment_only_lines as arguments.
 ```
 
 ### project_requirements.txt
 
 ```python
 # One-lining just to show multiple -r works on one line, -r is the only thing that works on one line.
--r ./lambdas/s3_event_lambda/s3_lambda_reqs.txt --requirement=./lambdas/api_lambda/api_lambda_reqs.txt
+-r ./lambdas/s3_event_lambda/s3_lambda_reqs.txt --requirement=./lambdas/api_lambda/api_lambda_reqs.txt # comment
 
 ./pip_packages/orm_models # requirement-walker: local-package-name=orm-models
+orm @ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm2 @ git+https://github.com/ORG/orm2.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm3 @ git+http://github.com/ORG/orm3.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
 ```
 
 ### generic_reqs.txt
@@ -109,6 +121,9 @@ pytest-cov==2.10.1
 pylint==2.6.0
 docker==4.4.0
 coverage==4.5.4
+# Some other stuff
+
+# Add empty line
 ```
 
 ### s3_lambda_reqs.txt
@@ -129,6 +144,17 @@ coverage==4.5.4
 
 ```text
 ... Logs omitted ...
+Output 1:
+# One-lining just to show multiple -r works on one line, -r is the only thing that works on one line.
+-r C:\Users\{UserName}\Repos\3mcloud\requirement-walker\tests\examples\example_application\lambdas\s3_event_lambda\s3_lambda_reqs.txt # comment
+-r C:\Users\{UserName}\Repos\3mcloud\requirement-walker\tests\examples\example_application\lambdas\api_lambda\api_lambda_reqs.txt # comment
+
+./pip_packages/orm_models # requirement-walker: local-package-name=orm-models
+orm@ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm2@ git+https://github.com/ORG/orm2.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm3@ git+http://github.com/ORG/orm3.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+---------------------------------------------
+Output 2:
 # One-lining just to show multiple -r works on one line, -r is the only thing that works on one line.
 moto==1.3.16.dev67
 pytest==6.1.2
@@ -136,6 +162,9 @@ pytest-cov==2.10.1
 pylint==2.6.0
 docker==4.4.0
 coverage==4.5.4
+# Some other stuff
+
+# Add empty line
 ./pip_packages/orm_models # requirement-walker: local-package-name|root-relative=./pip_packages/orm_models
 moto==1.3.16.dev67
 pytest==6.1.2
@@ -143,8 +172,15 @@ pytest-cov==2.10.1
 pylint==2.6.0
 docker==4.4.0
 coverage==4.5.4
+# Some other stuff
+
+# Add empty line
 ./pip_packages/orm_models # requirement-walker: local-package-name|root-relative=./pip_packages/orm_models
+
 ./pip_packages/orm_models # requirement-walker: local-package-name=orm-models
+orm@ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm2@ git+https://github.com/ORG/orm2.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm3@ git+http://github.com/ORG/orm3.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
 ```
 
 **NOTE**: Duplicates are NOT filtered out. You can do this on your own if you want using `entry.requirement.name` to filter them out as you iterate.
@@ -177,14 +213,14 @@ cffi==1.14.4
 import logging
 
 # 3rd Party
-from requirement_walker import walk
+from requirement_walker import RequirementFile
 
 # Owned
 
 if __name__ == '__main__':
     FORMAT = '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
     logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-    entries = list(walk('./requirements.txt'))
+    entries = RequirementFile('./requirements.txt')
     print(*entries, sep='\n')
 ```
 
@@ -207,7 +243,7 @@ cffi==1.14.4
 Note that it still printed correctly, but if you look at the logs you will see what happened:
 
 ```text
-[2020-12-14 11:35:33,277] {...} WARNING - Unable to parse requirement. Doing simple FailedRequirement where name=failed_req and url=./local_pips/my_package. Open Issue in GitHub to have this fixed.
+WARNING  requirement_walker.walker:walker.py:148 Unable to parse requirement. Doing simple FailedRequirement where name=failed_req and url=./local_pips/my_package. Open Issue in GitHub to have this fixed.
 ```
 
 If you want, you can refine requirements by looking at class instances:
@@ -219,25 +255,32 @@ If you want, you can refine requirements by looking at class instances:
 import logging
 
 # 3rd Party
-from requirement_walker import walk, LocalRequirement, FailedRequirement
+from requirement_walker import RequirementFile, LocalPackageRequirement, FailedRequirement
 
 # Owned
 
 if __name__ == '__main__':
     FORMAT = '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
     logging.basicConfig(format=FORMAT, level=logging.ERROR)
-    for entry in walk('./requirements.txt'):
+    for entry in RequirementFile('./requirements.txt'):
+        # `requirement` can be one of: `None, FailedRequirement, LocalPackageRequirement`
         if isinstance(entry.requirement, FailedRequirement):
-            print("This requirement was a failed req.", entry.requirement)
-        elif isinstance(entry.requirement, LocalRequirement):
-            print("This requirement was a local req.", entry.requirement)
+            print("This requirement was a failed req.", entry)
+        elif isinstance(entry.requirement, LocalPackageRequirement):
+            print("This requirement was a local req.", entry)
+        # If a entry is a requirement file, `requirement` will be None
+        # and `requirement_file` will have a value other then None.
+        elif isinstance(entry.requirement_file, RequirementFile):
+            print("This entry is another requirement file.", entry)
 # Ouput:
-# This requirement was a failed req. failed_req@ ./local_pips/my_package
-# This requirement was a local req. local_req@ ./pip_packages/orm_models
+# This requirement was a failed req. ./local_pips/my_package # This will cause a failed requirement step
+# This requirement was a local req. ./pip_packages/orm_models # requirement-walker: local-package-name
 ```
 
 ## What is an Entry?
 
-We define an entry as a single line within a requirements.txt file which consists of a requirement (except `-r & --requirement`), a comment, or both.
+We define an entry as a single line within a requirements.txt file which consists of a requirement file this line could be empty, only have a comment, only have a requirement, be a reference to another requirement file, or have a mixture of a requirement/requirement file and a comment.
 
-An Entry object has three main attributes: `comment: Comment`, `requirement: Union[pkg_resources.Requirement, FailedRequirement, LocalRequirement]`, and `proxy_requirement: _ProxyRequirement`. Note, you will mainly work with `comment` and `requirement` but there may be cases where the package does not behave properly, in which cases it `proxy_requirement` will hold all the other information pulled by the walker.
+An Entry object has four main attributes but will not have them all at the same time: `comment: Union[Comment, None]`, `requirement: Union[pkg_resources.Requirement, FailedRequirement, LocalPackageRequirement, None]`, `proxy_requirement: Union[_ProxyRequirement, None]`, and lasty `requirement_file: [RequirementFile, None]`. If all of these attributes are set to `None` then the line the entry represents was an empty line. The `requirement` has a value then `proxy_requirement` will as well but `requirement_file` will NOT. If `requirement_file` has a value then `requirement` and `proxy_requirement` will NOT. A `comment` can exist on its own (a line with only a comment) or a comment can exist with either `requirement` or `requirement_file`.
+
+Note, you will mainly work with `requirement` NOT `proxy_requirement`, but there may be cases where the package does not behave properly, in which cases it `proxy_requirement` will hold all the other information pulled by the walker.
