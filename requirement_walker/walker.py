@@ -305,7 +305,7 @@ class RequirementFile:
         If no entries have been parsed yet, walks a requirement file path but if the class already
         has entries, then yields from existing entries. Yields a GENERATOR of Entry objects.
         """
-        if isinstance(self.entries, list):
+        if isinstance(self._entries, list):
             LOGGER.debug("Yielding from cached entries.")
             for entry in self._entries:
                 yield entry
