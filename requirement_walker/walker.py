@@ -1,13 +1,11 @@
 """
-Class to parse requirements file.
-1 Requirement should be on 1 line.
+Package to parse requirements file.
 """
+
 # Built In
-import re
 import logging
-from os.path import join
 from pathlib import Path
-from typing import Union, List, Generator, Tuple
+from typing import Union, Generator, Tuple
 from pkg_resources import Requirement, RequirementParseError
 
 # 3rd Party
@@ -21,18 +19,7 @@ from .regex_expressions import (
     GIT_PROTOCOL # Extra git protocal from git requirements.
 )
 
-# TODO: Keep newlines
-
 LOGGER = logging.getLogger(__name__)
-
-
-def read_file_lines(file_path: str):
-    """
-    Generator: opens the file and returns its line iterator.
-    """
-    with open(file_path, 'r') as file_obj:
-        for line in file_obj:
-            yield line
 
 class RequirementFileError(Exception):
     """
@@ -149,7 +136,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
                 if REQ_OPTION_PATTERN.search(self.requirement_str):
                     #  Line had -r or --requirement flags
                     raise RequirementFileError(
-                        "This requirement is a requirement file, parse serperately.")
+                        "This requirement is a requirement file, parse serperately.") from None
                 if 'local-package-name' in self.arguments:
                     # Else lets see if local-package-name argument was added
                     self.requirement = LocalRequirement(
@@ -265,52 +252,56 @@ class RequirementFile:
         file_path.parent.mkdir(parents=True, exist_ok=True) # Make the directory if it doesn't exist
         with open(file_path.absolute(), 'w') as output_file:
             print(*self.iter_recursive(), sep='\n', file=output_file)
-            
 
     def __iter__(self) -> Generator[Entry, None, None]:
         """
         Walks a requirement file path and yields a GENERATOR of Entry objects.
         """
         LOGGER.info("Iterating requirements file: %s", self.requirement_file_path.absolute())
-        for line in read_file_lines(self.requirement_file_path.absolute()):
-            # Strip off the newlines to make things easier
-            line = line.strip()
-            if not line:
-                yield Entry() # Empty Line
-                continue
+        with open(self.requirement_file_path.absolute()) as input_file:
+            for line in input_file:
+                # Strip off the newlines to make things easier
+                line = line.strip()
+                if not line:
+                    yield Entry() # Empty Line
+                    continue
 
-            # Pull out the requirement (seperated from any comments)
-            match = LINE_COMMENT_PATTERN.match(line)
-            if not match:
-                LOGGER.error(
-                    "Could not properly match the following line (continuing): %s",
-                    line
-                )
-                continue
+                # Pull out the requirement (seperated from any comments)
+                match = LINE_COMMENT_PATTERN.match(line)
+                if not match:
+                    LOGGER.error(
+                        "Could not properly match the following line (continuing): %s",
+                        line
+                    )
+                    continue
 
-            req_str, comment = match.group('reqs'), match.group('comment')
-            comment = Comment(comment)
-            try:
-                requirement = _ProxyRequirement(req_str, comment.arguments)
-                yield Entry(proxy_requirement=requirement, comment=comment)
-            except RequirementFileError:
-                LOGGER.debug("Parsed requirement appears to be -r argument, make entry a req file.")
-                for result in REQ_OPTION_PATTERN.finditer(req_str):
-                    new_path = result.group('file_path')
-                    full_relative_path = self.requirement_file_path.parent.absolute() / new_path
+                req_str, comment = match.group('reqs'), match.group('comment')
+                comment = Comment(comment)
+                try:
+                    requirement = _ProxyRequirement(req_str, comment.arguments)
+                    yield Entry(proxy_requirement=requirement, comment=comment)
+                except RequirementFileError:
                     LOGGER.debug(
-                        "Parent File: %s - Child requirement file path: %s - New Child Path: %s",
-                        self.requirement_file_path.parent.absolute(), new_path, full_relative_path
-                    )
-                    yield Entry(
-                        requirement_file=RequirementFile(full_relative_path),
-                        comment=comment
-                    )
-    
+                        "Parsed requirement appears to be -r argument, make entry a req file.")
+                    for result in REQ_OPTION_PATTERN.finditer(req_str):
+                        new_path = result.group('file_path')
+                        full_relative_path = self.requirement_file_path.parent.absolute() / new_path
+                        LOGGER.debug(
+                            "Parent File: %s - Child requirement file "
+                            "path: %s - New Child Path: %s",
+                            self.requirement_file_path.parent.absolute(),
+                            new_path,
+                            full_relative_path
+                        )
+                        yield Entry(
+                            requirement_file=RequirementFile(full_relative_path),
+                            comment=comment
+                        )
+
     def __repr__(self):
         """ Object Representation """
         return f"RequirementFile(requirement_file_path='{self.requirement_file_path.absolute()}')"
-    
+
     def iter_recursive(self) -> Generator[Entry, None, None]:
         """
         Iterates through requirements. If another requirement file is hit, it will yield

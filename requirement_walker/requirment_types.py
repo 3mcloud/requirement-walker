@@ -4,15 +4,15 @@ to handle requirements not natively supported by `Requirement`
 """
 
 # Built In
-from pkg_resources import Requirement
 from typing import Union
+from pkg_resources import Requirement
 
 # 3rd Party
 
 # Owned
 
 
-class LocalRequirement(Requirement):
+class LocalRequirement(Requirement): # pylint: disable=too-few-public-methods
     """
     Class to handle local requirements. Requirement name is optional
     but should probably be added.
@@ -23,7 +23,7 @@ class LocalRequirement(Requirement):
         super().__init__(req_name)
         self.url = local_path
 
-class FailedRequirement(Requirement):
+class FailedRequirement(Requirement): # pylint: disable=too-few-public-methods
     """
     Class to handle failed requirements. Requirement name is optional
     but defaulted.
