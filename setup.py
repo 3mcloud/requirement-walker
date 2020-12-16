@@ -7,7 +7,7 @@ import subprocess
 from setuptools import setup, find_packages
 
 NAME = 'requirement-walker'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 AUTHOR = 'Alex Guckenberger'
 AUTHOR_EMAIL = 'aguckenberger@mmm.com'
 DESCRIPTION = 'Walk through requirements and comments in requirements.txt files.'

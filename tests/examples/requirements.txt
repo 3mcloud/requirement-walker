@@ -8,4 +8,4 @@ botocore==1.19.28
 certifi==2020.11.8
 cffi==1.14.4
 ./pip_packages/orm_models # requirement-walker: local-package-name
-orm @ git+ssh://git@github.mmm.com/MMM/firecracker-infra.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm @ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link

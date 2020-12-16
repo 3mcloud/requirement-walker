@@ -1,4 +1,7 @@
 # One-lining just to show multiple -r works on one line, -r is the only thing that works on one line.
--r ./lambdas/s3_event_lambda/s3_lambda_reqs.txt --requirement=./lambdas/api_lambda/api_lambda_reqs.txt
+-r ./lambdas/s3_event_lambda/s3_lambda_reqs.txt --requirement=./lambdas/api_lambda/api_lambda_reqs.txt # comment
 
 ./pip_packages/orm_models # requirement-walker: local-package-name=orm-models
+orm @ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm2 @ git+https://github.com/ORG/orm2.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm3 @ git+http://github.com/ORG/orm3.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link

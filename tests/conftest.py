@@ -15,4 +15,3 @@ def examples_path():
     """
     cur_path = Path(__file__).parent.absolute()
     return cur_path / 'examples'
-    

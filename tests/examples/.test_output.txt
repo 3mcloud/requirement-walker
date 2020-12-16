@@ -1,0 +1,26 @@
+# One-lining just to show multiple -r works on one line, -r is the only thing that works on one line.
+moto==1.3.16.dev67
+pytest==6.1.2
+pytest-cov==2.10.1
+pylint==2.6.0
+docker==4.4.0
+coverage==4.5.4
+# Some other stuff
+
+# Add empty line
+./pip_packages/orm_models # requirement-walker: local-package-name|root-relative=./pip_packages/orm_models
+moto==1.3.16.dev67
+pytest==6.1.2
+pytest-cov==2.10.1
+pylint==2.6.0
+docker==4.4.0
+coverage==4.5.4
+# Some other stuff
+
+# Add empty line
+./pip_packages/orm_models # requirement-walker: local-package-name|root-relative=./pip_packages/orm_models
+
+./pip_packages/orm_models # requirement-walker: local-package-name=orm-models
+orm@ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm2@ git+https://github.com/ORG/orm2.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+orm3@ git+http://github.com/ORG/orm3.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
