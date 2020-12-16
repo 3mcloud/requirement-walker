@@ -6,7 +6,7 @@ Package to parse requirements file.
 import logging
 from pathlib import Path
 from typing import Union, Generator, Tuple
-from pkg_resources import Requirement, RequirementParseError
+from pkg_resources import Requirement
 
 # 3rd Party
 
@@ -127,10 +127,10 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         if self.requirement_str:
             try:
                 self.requirement = Requirement.parse(self.requirement_str)
-            except RequirementParseError as err:
-                LOGGER.warning(
+            except Exception as err:
+                LOGGER.info(
                     "Was unable to use pkg_resources to parse requirement. "
-                    "Attempting too parse using custom code. RequirementParseError for reference:"
+                    "Attempting too parse using custom code. Exception for reference:"
                     " %s", err
                 )
                 if REQ_OPTION_PATTERN.search(self.requirement_str):
@@ -241,12 +241,19 @@ class RequirementFile:
         self.requirement_file_path = Path(requirement_file_path)
         self.entries = list(self)
 
-    def to_single_file(self, path: str) -> None:
+    def to_single_file(self,
+                       path: str,
+                       ignore_duplicates: bool = False,
+                       remove_empty_lines: bool = False,
+                       remove_comment_only_lines: bool = False) -> None:
         """
         Output all requirements to the provided path. Creates/overwrites the provided file path.
         Good for removing `-r` or `--requirement` flags. Duplciations can optionally be removed.
         ARGS:
             path (str): Path to the file which will be written to.
+            ignore_duplicates (bool): Remove lines which are duplicates
+                                      in terms of requirement name.
+            remove_empty_lines (bool)
         """
         file_path = Path(path)
         file_path.parent.mkdir(parents=True, exist_ok=True) # Make the directory if it doesn't exist
