@@ -12,7 +12,7 @@ from pkg_resources import Requirement
 # Owned
 
 
-class LocalRequirement(Requirement): # pylint: disable=too-few-public-methods
+class LocalPackageRequirement(Requirement): # pylint: disable=too-few-public-methods
     """
     Class to handle local requirements. Requirement name is optional
     but should probably be added.

@@ -4,7 +4,7 @@
 from pathlib import Path
 
 # 3rd Party
-from requirement_walker import LocalRequirement, FailedRequirement, RequirementFile
+from requirement_walker import LocalPackageRequirement, FailedRequirement, RequirementFile
 
 # Owned
 
@@ -83,3 +83,25 @@ def test_output_file_ignore_empty_lines(examples_path):
     assert no_comment_only_count == 21
     assert no_empty_line_count == 23
     assert no_empty_line_or_comment_only_count == 18
+
+def test_readme_output(examples_path):
+    """ Get the first output for the README. """
+    req_file = RequirementFile(examples_path / './example_application/project_requirements.txt')
+    # RequirementFile has a magic method __iter__ written for it so it can be iterated over.
+    print("Output 1:", *req_file, sep='\n') # Output found down below
+    print("---------------------------------------------")
+    print("Output 2:", *req_file.iter_recursive(), sep='\n') # Output found down below
+    assert True
+
+def test_readme_failed_req(examples_path):
+    """ Get the second output for the README. """
+    for entry in RequirementFile(examples_path / './requirements.txt'):
+        if isinstance(entry.requirement, FailedRequirement):
+            print("This requirement was a failed req.", entry)
+        elif isinstance(entry.requirement, LocalPackageRequirement):
+            print("This requirement was a local req.", entry)
+        # If a entry is a requirement file, `requirement` will be None
+        # and `requirement_file` will have a value other then None.
+        elif isinstance(entry.requirement_file, RequirementFile):
+            print("This entry is another requirement file.", entry)
+    assert True

@@ -11,7 +11,7 @@ from pkg_resources import Requirement
 # 3rd Party
 
 # Owned
-from .requirment_types import LocalRequirement, FailedRequirement
+from .requirment_types import LocalPackageRequirement, FailedRequirement
 from .regex_expressions import (
     LINE_COMMENT_PATTERN, # Serpate a requirement from its comments.
     REQ_OPTION_PATTERN, # Extract -r and --requirement from a requirement.
@@ -139,7 +139,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
                         "This requirement is a requirement file, parse serperately.") from None
                 if 'local-package-name' in self.arguments:
                     # Else lets see if local-package-name argument was added
-                    self.requirement = LocalRequirement(
+                    self.requirement = LocalPackageRequirement(
                         self.arguments.get('root-relative', self.requirement_str),
                         self.arguments.get('local-package-name')
                     )
@@ -169,7 +169,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         """
         if isinstance(self.requirement, FailedRequirement):
             return self.requirement.url
-        if isinstance(self.requirement, LocalRequirement):
+        if isinstance(self.requirement, LocalPackageRequirement):
             return self.requirement.url
         return str(self.requirement) # Fall back to the string representation of a Requirement
 
@@ -198,15 +198,18 @@ class Entry: # pylint: disable=too-few-public-methods
 
     def __str__(self):
         """ String magic method overload to print out an entry as it appeared before. """
+        root_relative = self.comment.arguments.get('root-relative', None) if self.comment else None
+        # pylint: disable=line-too-long
         str_map = {
             # proxy_requirement, comment, requirement_file
             (False, False, False): '', # Was just an empty line
             (True, False, False): f"{self.proxy_requirement}",
-            (False, True, False): f"{self.comment}",
-            (False, False, True): repr(self.requirement_file),
+            (False, True, False):  f"{self.comment}",
+            (False, False, True): f"-r {root_relative}" if root_relative else f"-r {self.requirement_file}",
             (True, True, False): f"{self.proxy_requirement} {self.comment}",
-            (False, True, True): f"{repr(self.requirement_file)} {self.comment}",
+            (False, True, True): f"-r {root_relative} {self.comment}" if root_relative else f"-r {self.requirement_file} {self.comment}",
         }
+        # pylint: enable=line-too-long
         key = (bool(self.proxy_requirement), bool(self.comment), bool(self.requirement_file))
         try:
             return str_map[key]
@@ -247,7 +250,6 @@ class Entry: # pylint: disable=too-few-public-methods
         if self.comment is None:
             return False
         return True
-
 
 class RequirementFile:
     """ A class which represents a requirement file. """
@@ -335,6 +337,10 @@ class RequirementFile:
     def __repr__(self):
         """ Object Representation """
         return f"RequirementFile(requirement_file_path='{self.requirement_file_path.absolute()}')"
+
+    def __str__(self):
+        """ String Overload, returns the absolute path to the req file. """
+        return str(self.requirement_file_path.absolute())
 
     def iter_recursive(self) -> Generator[Entry, None, None]:
         """
