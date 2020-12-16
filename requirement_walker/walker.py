@@ -239,8 +239,8 @@ class Entry: # pylint: disable=too-few-public-methods
         if self.requirement and self.requirement.url:
             result = GIT_PROTOCOL.search(self.requirement.url)
             if result:
-                return True, result.group('protocol') if return_protocol else True
-        return False, '' if return_protocol else False
+                return (True, result.group('protocol')) if return_protocol else True
+        return (False, '') if return_protocol else False
 
     def is_comment_only(self):
         """ Returns true if this entry was a comment and nothing else. """
