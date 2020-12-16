@@ -296,7 +296,7 @@ class RequirementFile:
                 continue
             entries_to_write.append(entry)
         if no_duplicate_lines:
-            entries_to_write = {val: None for val in entries_to_write} # Set doesn't retain order.
+            entries_to_write = {str(val): None for val in entries_to_write} # Set doesn't retain order.
         with open(file_path.absolute(), 'w') as output_file:
             print(*entries_to_write, sep='\n', file=output_file)
 
