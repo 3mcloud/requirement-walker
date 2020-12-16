@@ -1,5 +1,5 @@
 # Test output file
-.test_output.txt
+test_output_files/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

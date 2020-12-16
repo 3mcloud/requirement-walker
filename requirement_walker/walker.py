@@ -127,7 +127,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
         if self.requirement_str:
             try:
                 self.requirement = Requirement.parse(self.requirement_str)
-            except Exception as err:
+            except Exception as err: # pylint: disable=braod-except
                 LOGGER.info(
                     "Was unable to use pkg_resources to parse requirement. "
                     "Attempting too parse using custom code. Exception for reference:"
@@ -216,6 +216,16 @@ class Entry: # pylint: disable=too-few-public-methods
             )
             return ''
 
+    def __bool__(self):
+        """
+        A Entry is considered False if it was just an empty line or a line with nothing
+        but spaces.
+        """
+        for attr in (self.proxy_requirement, self.comment, self.requirement_file):
+            if attr is not None:
+                return True
+        return False
+
     def is_git(self, return_protocol: bool = False) -> Union[bool, Tuple[bool, str]]:
         """
         Returns true if the requirement for this entry is a requirement to a git URL.
@@ -228,6 +238,16 @@ class Entry: # pylint: disable=too-few-public-methods
             if result:
                 return True, result.group('protocol') if return_protocol else True
         return False, '' if return_protocol else False
+
+    def is_comment_only(self):
+        """ Returns true if this entry was a comment and nothing else. """
+        for attr in (self.proxy_requirement, self.requirement_file):
+            if attr is not None:
+                return False
+        if self.comment is None:
+            return False
+        return True
+
 
 class RequirementFile:
     """ A class which represents a requirement file. """
@@ -243,22 +263,29 @@ class RequirementFile:
 
     def to_single_file(self,
                        path: str,
-                       ignore_duplicates: bool = False,
-                       remove_empty_lines: bool = False,
-                       remove_comment_only_lines: bool = False) -> None:
+                       # ignore_duplicates: bool = False,
+                       no_empty_lines: bool = False,
+                       no_comment_only_lines: bool = False) -> None:
         """
         Output all requirements to the provided path. Creates/overwrites the provided file path.
-        Good for removing `-r` or `--requirement` flags. Duplciations can optionally be removed.
+        Good for removing `-r` or `--requirement` flags.
         ARGS:
             path (str): Path to the file which will be written to.
-            ignore_duplicates (bool): Remove lines which are duplicates
-                                      in terms of requirement name.
-            remove_empty_lines (bool)
+            no_empty_lines (bool): Don't add lines that were empty or just had spaces.
+            no_comment_only_lines (bool): Don't add lines which were only comments with
+                                          no requirements.
         """
         file_path = Path(path)
         file_path.parent.mkdir(parents=True, exist_ok=True) # Make the directory if it doesn't exist
+        entries_to_write = []
+        for entry in self.iter_recursive():
+            if no_empty_lines and not entry:
+                continue
+            if no_comment_only_lines and entry.is_comment_only():
+                continue
+            entries_to_write.append(entry)
         with open(file_path.absolute(), 'w') as output_file:
-            print(*self.iter_recursive(), sep='\n', file=output_file)
+            print(*entries_to_write, sep='\n', file=output_file)
 
     def __iter__(self) -> Generator[Entry, None, None]:
         """
