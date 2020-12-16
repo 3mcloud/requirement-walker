@@ -261,15 +261,14 @@ class RequirementFile:
         """
         self.sub_req_files = {}
         self.requirement_file_path = Path(requirement_file_path)
-        self.entries = None
+        self._entries = None
 
     @property
     def entries(self):
         """ Property, returns a list of all entries. """
-        if self.entries is None:
-            for _ in self:
-                pass
-        return self.entries
+        if self._entries is None:
+            self._entries = list(self)
+        return self._entries
 
     def to_single_file(self,
                        path: str,
@@ -306,9 +305,9 @@ class RequirementFile:
         If no entries have been parsed yet, walks a requirement file path but if the class already
         has entries, then yields from existing entries. Yields a GENERATOR of Entry objects.
         """
-        if self.entries is not None:
+        if isinstance(self.entries, list):
             LOGGER.debug("Yielding from cached entries.")
-            for entry in self.entries:
+            for entry in self._entries:
                 yield entry
             return
 
