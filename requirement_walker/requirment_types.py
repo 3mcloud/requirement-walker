@@ -23,6 +23,10 @@ class LocalPackageRequirement(Requirement): # pylint: disable=too-few-public-met
         super().__init__(req_name)
         self.url = local_path
 
+    def __bool__(self):
+        """ Requirements will be considered true by nature. """
+        return True
+
 class FailedRequirement(Requirement): # pylint: disable=too-few-public-methods
     """
     Class to handle failed requirements. Requirement name is optional
@@ -33,3 +37,7 @@ class FailedRequirement(Requirement): # pylint: disable=too-few-public-methods
             req_name = 'failed_req'
         super().__init__(req_name)
         self.url = full_req
+
+    def __bool__(self):
+        """ Requirements will be considered true by nature. """
+        return True
