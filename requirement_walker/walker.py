@@ -265,7 +265,7 @@ class RequirementFile:
 
     def to_single_file(self,
                        path: str,
-                       # ignore_duplicates: bool = False,
+                       np_duplicate_lines: bool = False,
                        no_empty_lines: bool = False,
                        no_comment_only_lines: bool = False) -> None:
         """
@@ -273,6 +273,8 @@ class RequirementFile:
         Good for removing `-r` or `--requirement` flags.
         ARGS:
             path (str): Path to the file which will be written to.
+            np_duplicate_lines (bool): Skips duplicate lines
+                                       (Entire line must be a duplicate with another).
             no_empty_lines (bool): Don't add lines that were empty or just had spaces.
             no_comment_only_lines (bool): Don't add lines which were only comments with
                                           no requirements.
@@ -286,6 +288,8 @@ class RequirementFile:
             if no_comment_only_lines and entry.is_comment_only():
                 continue
             entries_to_write.append(entry)
+        if np_duplicate_lines:
+            entries_to_write = {val: None for val in entries_to_write} # Set doesn't retain order.
         with open(file_path.absolute(), 'w') as output_file:
             print(*entries_to_write, sep='\n', file=output_file)
 
