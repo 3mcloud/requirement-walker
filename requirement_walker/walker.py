@@ -262,7 +262,14 @@ class RequirementFile:
         self.sub_req_files = {}
         self.requirement_file_path = Path(requirement_file_path)
         self.entries = None
-        self.entries = list(self)
+
+    @property
+    def entries(self):
+        """ Property, returns a list of all entries. """
+        if self.entries is None:
+            for _ in self:
+                pass
+        return self.entries
 
     def to_single_file(self,
                        path: str,
