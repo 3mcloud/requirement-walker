@@ -261,6 +261,7 @@ class RequirementFile:
         """
         self.sub_req_files = {}
         self.requirement_file_path = Path(requirement_file_path)
+        self.entries = None
         self.entries = list(self)
 
     def to_single_file(self,
@@ -295,8 +296,15 @@ class RequirementFile:
 
     def __iter__(self) -> Generator[Entry, None, None]:
         """
-        Walks a requirement file path and yields a GENERATOR of Entry objects.
+        If no entries have been parsed yet, walks a requirement file path but if the class already
+        has entries, then yields from existing entries. Yields a GENERATOR of Entry objects.
         """
+        if self.entries is not None:
+            LOGGER.debug("Yielding from cached entries.")
+            for entry in self.entries:
+                yield entry
+            return
+
         LOGGER.info("Iterating requirements file: %s", self.requirement_file_path.absolute())
         with open(self.requirement_file_path.absolute()) as input_file:
             for line in input_file:
@@ -337,6 +345,7 @@ class RequirementFile:
                             requirement_file=RequirementFile(full_relative_path),
                             comment=comment
                         )
+        return
 
     def __repr__(self):
         """ Object Representation """
@@ -346,13 +355,25 @@ class RequirementFile:
         """ String Overload, returns the absolute path to the req file. """
         return str(self.requirement_file_path.absolute())
 
-    def iter_recursive(self) -> Generator[Entry, None, None]:
+    def iter_recursive(self,
+                       no_empty_lines: bool = False,
+                       no_comment_only_lines: bool = False) -> Generator[Entry, None, None]:
         """
         Iterates through requirements. If another requirement file is hit, it will yield
         from that generator.
+
+        ARGS:
+            path (str): Path to the file which will be written to.
+            no_empty_lines (bool): Don't return lines that were empty or just had spaces.
+            no_comment_only_lines (bool): Don't return lines which were only comments with
+                                          no requirements.
         """
         for entry in self:
             if isinstance(entry.requirement_file, RequirementFile):
                 yield from entry.requirement_file.iter_recursive()
             else:
+                if no_empty_lines and not entry:
+                    continue
+                if no_comment_only_lines and entry.is_comment_only():
+                    continue
                 yield entry
