@@ -243,7 +243,7 @@ cffi==1.14.4
 Note that it still printed correctly, but if you look at the logs you will see what happened:
 
 ```text
-WARNING  requirement_walker.walker:walker.py:148 Unable to parse requirement. Doing simple FailedRequirement where name=failed_req and url=./local_pips/my_package. Open Issue in GitHub to have this fixed.
+WARNING  requirement_walker.walker:walker.py:148 Unable to parse requirement. Doing simple FailedRequirement where name=failed_req and url=./local_pips/my_package. Will still output.
 ```
 
 If you want, you can refine requirements by looking at class instances:

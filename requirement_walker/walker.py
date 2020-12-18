@@ -147,8 +147,7 @@ class _ProxyRequirement: # pylint: disable=too-few-public-methods
                     # Couldn't parse it with our current logic.
                     LOGGER.warning(
                         "Unable to parse requirement. Doing simple "
-                        "FailedRequirement where name=%s and url=%s. Open Issue in "
-                        "GitHub to have this fixed.",
+                        "FailedRequirement where name=%s and url=%s. Will still output.",
                         'failed_req', self.requirement_str)
                     self.requirement = FailedRequirement(full_req=self.requirement_str)
 
