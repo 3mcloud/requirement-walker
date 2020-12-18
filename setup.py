@@ -7,14 +7,13 @@ import subprocess
 from setuptools import setup, find_packages
 
 NAME = 'requirement-walker'
-VERSION = '0.0.7'
+VERSION = '0.0.8'
 AUTHOR = 'Alex Guckenberger'
 AUTHOR_EMAIL = 'aguckenberger@mmm.com'
 DESCRIPTION = 'Walk through requirements and comments in requirements.txt files.'
 URL = 'https://github.com/3mcloud/requirement-walker'
 REQUIRES = []
 REQUIRES_TEST = [
-    'pylint>=2.5.0',
     'pytest>=5.4.1',
     'pytest-cov>=2.8.1',
 ]
