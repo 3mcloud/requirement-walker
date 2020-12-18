@@ -14,7 +14,6 @@ DESCRIPTION = 'Walk through requirements and comments in requirements.txt files.
 URL = 'https://github.com/3mcloud/requirement-walker'
 REQUIRES = []
 REQUIRES_TEST = [
-    'pylint>=2.5.0',
     'pytest>=5.4.1',
     'pytest-cov>=2.8.1',
 ]
