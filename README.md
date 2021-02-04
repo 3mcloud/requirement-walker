@@ -279,8 +279,18 @@ if __name__ == '__main__':
 
 ## What is an Entry?
 
-We define an entry as a single line within a requirements.txt file which consists of a requirement file this line could be empty, only have a comment, only have a requirement, be a reference to another requirement file, or have a mixture of a requirement/requirement file and a comment.
+We define an entry as a single line within a requirements.txt file which could be empty, only have a comment, only have a requirement, be a reference to another requirement file, or have a mixture of a requirement/requirement file and a comment.
 
-An Entry object has four main attributes but will not have them all at the same time: `comment: Union[Comment, None]`, `requirement: Union[pkg_resources.Requirement, FailedRequirement, LocalPackageRequirement, None]`, `proxy_requirement: Union[_ProxyRequirement, None]`, and lasty `requirement_file: [RequirementFile, None]`. If all of these attributes are set to `None` then the line the entry represents was an empty line. The `requirement` has a value then `proxy_requirement` will as well but `requirement_file` will NOT. If `requirement_file` has a value then `requirement` and `proxy_requirement` will NOT. A `comment` can exist on its own (a line with only a comment) or a comment can exist with either `requirement` or `requirement_file`.
+An Entry object has four main attributes but will not have them all at the same time:
+- `comment: Union[Comment, None]`
+- `requirement: Union[pkg_resources.Requirement, FailedRequirement, LocalPackageRequirement, None]`
+- `proxy_requirement: Union[_ProxyRequirement, None]`
+- `requirement_file: [RequirementFile, None]`.
 
-Note, you will mainly work with `requirement` NOT `proxy_requirement`, but there may be cases where the package does not behave properly, in which cases it `proxy_requirement` will hold all the other information pulled by the walker.
+When attributes have values:
+- If all of these attributes are set to `None` then the line the entry represents was an empty line.
+- If `requirement` has a value then `proxy_requirement` will as well but `requirement_file` will NOT.
+- If `requirement_file` has a value then `requirement` and `proxy_requirement` will NOT.
+- A `comment` can exist on its own (a line with only a comment) or a comment can exist with either `requirement` or `requirement_file`.
+
+Note, you will mainly work with `requirement` NOT `proxy_requirement`, but there may be cases where the package does not behave properly, in which cases `proxy_requirement` will hold all the other information pulled by the walker than you can use to code your way out of the mess.
