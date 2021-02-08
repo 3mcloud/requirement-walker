@@ -16,7 +16,8 @@ from .regex_expressions import (
     LINE_COMMENT_PATTERN, # Serpate a requirement from its comments.
     REQ_OPTION_PATTERN, # Extract -r and --requirement from a requirement.
     ARG_EXTRACT_PATTERN, # Extract package arguments from the requirement comments.
-    GIT_PROTOCOL # Extra git protocal from git requirements.
+    GIT_PROTOCOL, # Extract git protocal from git requirements.
+    COMMENT_ONLY_PATTERN, # Extract lines that are only comments.
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -319,16 +320,21 @@ class RequirementFile:
                     yield Entry() # Empty Line
                     continue
 
-                # Pull out the requirement (seperated from any comments)
-                match = LINE_COMMENT_PATTERN.match(line)
-                if not match:
-                    LOGGER.error(
-                        "Could not properly match the following line (continuing): %s",
-                        line
-                    )
-                    continue
-
-                req_str, comment = match.group('reqs'), match.group('comment')
+                # Check for a comment only line first:
+                comment_match = COMMENT_ONLY_PATTERN.match(line)
+                if not comment_match:
+                    # Pull out the requirement (seperated from any comments)
+                    match = LINE_COMMENT_PATTERN.match(line)
+                    if not match:
+                        LOGGER.error(
+                            "Could not properly match the following line (continuing): %s",
+                            line
+                        )
+                        continue
+                if comment_match:
+                    req_str, comment = None, comment_match.group('comment')
+                else:
+                    req_str, comment = match.group('reqs'), match.group('comment')
                 comment = Comment(comment)
                 try:
                     requirement = _ProxyRequirement(req_str, comment.arguments)

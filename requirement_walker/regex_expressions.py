@@ -10,6 +10,9 @@ import re
 # Used to seperate the important part from the comments on each line.
 LINE_COMMENT_PATTERN = re.compile(r"^(?P<reqs>[^\r\n]*?)(?:\s*)(?P<comment> #.*)?$")
 
+# Used to find lines with only comments
+COMMENT_ONLY_PATTERN = re.compile(r"^(?P<comment>[ ]*#.*)$")
+
 # Used to pull out -r or --requirement files
 # Works for multi `-r`s in a single line
 # WORKS: -r test.txt -r ./path/test2.txt --requirement=oops.txt --requirement  C:\oops.txt
