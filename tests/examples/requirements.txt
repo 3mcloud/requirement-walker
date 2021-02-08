@@ -9,3 +9,4 @@ certifi==2020.11.8
 cffi==1.14.4
 ./pip_packages/orm_models # requirement-walker: local-package-name
 orm @ git+ssh://git@github.com/ORG/orm.git@5e2b6d14f00ffbd473dfe8b8602b79e37266568c # git link
+package.common @ git+ssh://git@github.com/ORG/package.git@master#egg=package.common&subdirectory=pip_packages/package-common # a comment
