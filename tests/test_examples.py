@@ -24,9 +24,6 @@ def test_simple_req_file(examples_path):
     """ Test the sole requirements.txt file """
     entries = list(RequirementFile(examples_path / './requirements.txt'))
     assert len(entries) == 12
-    # with open("temp.txt", 'w') as f:
-    #     entries = [str(entry) + '\n' for entry in entries]
-    #     f.writelines(entries)  
 
 def test_recursive_iter(examples_path):
     """ Use the walker and make some simple assertions. """
