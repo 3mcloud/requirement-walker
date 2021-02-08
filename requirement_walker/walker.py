@@ -36,7 +36,7 @@ class Comment:
         Constructor
         ARGS:
             comment_str (str): A string which represent a comment in the requirements.txt
-                file. The comment should start with `#`.
+                file. The comment should start with ` #`.
         """
         self._comment_str = comment_str
          # Stripping for good measure
